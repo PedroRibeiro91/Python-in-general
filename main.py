@@ -1,145 +1,80 @@
-import time
-import turtle
-
-# window configuration
-wn = turtle.Screen();
-wn.title("Pong")
-wn.bgcolor("lightblue")
-wn.setup(width=800, height=600)
-wn.tracer(0)
-
-player_1 = 0;
-player_2 = 0;
-
-# left paddle
-left_paddle = turtle.Turtle()
-left_paddle.speed(0)
-left_paddle.shape("square") # default is 20px by 20px
-left_paddle.color("black")
-left_paddle.shapesize(stretch_wid=5, stretch_len=1)
-left_paddle.penup()
-left_paddle.goto(-350, 0)
-
-
-# right paddle
-right_paddle = turtle.Turtle()
-right_paddle.speed(0)
-right_paddle.shape("square") # default is 20px by 20px
-right_paddle.color("black")
-right_paddle.shapesize(stretch_wid=5, stretch_len=1)
-right_paddle.penup()
-right_paddle.goto(350, 0)
-
-# ball
-ball = turtle.Turtle()
-ball.speed(0)
-ball.shape("square") # default is 20px by 20px
-ball.color("black")
-ball.penup()
-ball.goto(0, 0)
-
-# ball movement pattern
-
-ball_dx = 0.5  # pixels traveled in the x direction
-ball_dy = 0.5 # pixels traveled in the y direction
-
-# Create a pen object to register the scores
-pen = turtle.Turtle()
-pen.speed(0)
-pen.color("black")
-pen.penup()
-pen.hideturtle()
-pen.goto(0,260)
-pen.write("Player1 0 - 0 Player2", align="center", font=("Courier", 24, "normal"))
-
-# paddle movement
-def left_paddle_up():
-    y = left_paddle.ycor()
-    y += 20
-    left_paddle.sety(y)
-    if left_paddle.ycor() > 290:
-        left_paddle.sety(290)
-
-def left_paddle_down():
-    y = left_paddle.ycor()
-    y -= 20
-    left_paddle.sety(y)
-    if left_paddle.ycor() < -290:
-        left_paddle.sety(-290)
-
-def right_paddle_up():
-    y = right_paddle.ycor()
-    y += 20
-    right_paddle.sety(y)
-    if right_paddle.ycor() > 290:
-        right_paddle.sety(290)
-
-def right_paddle_down():
-    y = right_paddle.ycor()
-    y -= 20
-    right_paddle.sety(y)
-    if right_paddle.ycor() < -290:
-        right_paddle.sety(-290)
-
-# key binding
-
-wn.listen()
-wn.onkeypress(left_paddle_up, "w") # when we press W on our window it calls the function left_paddle_up
-wn.onkeypress(left_paddle_down, "s") # when we press s on our window it calls the function left_paddle_down
-wn.onkeypress(right_paddle_up, "Up") # when we press s on our window it calls the function left_paddle_down
-wn.onkeypress(right_paddle_down, "Down") # when we press s on our window it calls the function left_paddle_down
+import math
+import random
+import pygame
+import tkinter as tk
+from tkinter import messagebox
+from snakeclass import *
 
 
 
+def drawGrid(w, rows, surface): # draws the world
+    space = w // rows
+    x = 0
+    y = 0
+    for i in range(rows):
+        x += space
+        y += space
+        # at each step of the loop a vertical line is drawn
+        pygame.draw.line(surface, (0,0,0), (x,0), (x,w))
+        # at each step of the loop a horizontal line is drawn
+        pygame.draw.line(surface, (0, 0, 0), (0, y), (w, y))
 
-# main game loop
-while player_1 < 10 and player_2 < 10:
-    wn.update()
-    # moving the ball
-    ball.setx(ball.xcor() + ball_dx)
-    ball.sety(ball.ycor() + ball_dy)
+def redraWindow(surface): # window updater
+    global rows, width, ekans, snack
+    surface.fill((152,251,152))
+    ekans.drawEyes(surface)
+    snack.draw(surface)
+    drawGrid(width, rows, surface)
+    pygame.display.update()
 
-    # check up and down boarders
-    if ball.ycor() > 290:
-        ball.sety(290)
-        ball_dy *= -1 # reverse direction of movement
+def randomSnack(rows, snake):# creates snack in a position different from that of the snake
+    positions = snake.body
 
-    if ball.ycor() < -290:
-        ball.sety(-290)
-        ball_dy *= -1 # reverse direction of movement
+    while True:
+        x = random.randrange(rows)
+        y = random.randrange(rows)
+        # make sure a snack doesnt appear on top of the snake
+        if len(list(filter(lambda z:z.position == (x,y), positions))) > 0:
+            continue
+        else:
+            break
+    return (x, y)
 
-    # check left and right boarders
+def messageBox(subject, content):
+    root = tk.Tk()
+    root.attributes("-topmost", True)
+    messagebox.showinfo(subject, content)
+    try:
+        root.destroy()
+    except:
+        pass
 
-    if ball.xcor() > 390:
-        time.sleep(0.5)
-        ball.goto(0, 0)
-        ball_dx *= -1 # reverse direction of movement
-        player_1 += 1
-        pen.clear()
-        pen.write("Player 1 {} - {} Player 2".format(player_1, player_2), align="center",
-                  font=("Courier", 24, "normal"))
-
-    if ball.xcor() < -390:
-        time.sleep(0.5)
-        ball.goto(0, 0)
-        ball_dx *= -1 # reverse direction of movement
-        player_2 += 1
-        pen.clear()
-        pen.write("Player 1 {} - {} Player 2".format(player_1, player_2), align="center",
-                  font=("Courier", 24, "normal"))
-
-    # collision
-    # the right paddle is at position 350
-    # the ball is 20px by 20pxp
-    # we count as a colision with the right paddle whenever the ball is x cord is greater than 340
-    # and the balls y coordinate is between the (y coordinate of the paddle + 40) and (y coordinate of the paddle - 50)
-    if 350 > ball.xcor() > 340 and (right_paddle.ycor() + 40 > ball.ycor() > right_paddle.ycor() - 40):
-        ball.setx(340)
-        ball_dx *= -1 # collision ball reverses its movement
-
-    if -350 < ball.xcor() < -340 and (left_paddle.ycor() + 40 > ball.ycor() > left_paddle.ycor() - 40):
-        ball.setx(-340)
-        ball_dx *= -1 # collision ball reverses its movement
+def main():
+    global rows, width, ekans, snack
+    width = 500
+    rows = 20
+    window = pygame.display.set_mode((width, width))
+    flag = True
+    clock = pygame.time.Clock()
+    ekans = Snake((0, 0, 0), (10, 10))
+    snack = Square((random.randrange(rows), random.randrange(rows)), color=(128, 0, 128))
+    while flag:
+        pygame.time.delay(50) # this makes the snake not moving too fast
+        clock.tick(10) # this makes the snake not moving too slow
+        ekans.move()
+        if ekans.body[0].position == snack.position: # if the position of the head of the snake is the same as the snack
+            ekans.addSquare() # add it to the snakes body
+            snack = Square(randomSnack(rows, ekans), color=(128,0,128)) # create a new snack
+        # lets make sure than when we eat ourselves we die
+        for i in range(len(ekans.body)):
+            # if any part of our snakes body is in the list of the next body parts
+            if ekans.body[i].position in list(map(lambda z:z.position,ekans.body[i+1:])):
+                print("Your score was: ", len(ekans.body))
+                messageBox("You lost!!!", "Try again anytime!")
+                ekans.reset((10,10))
+                break
 
 
+        redraWindow(window)
 
+main()
